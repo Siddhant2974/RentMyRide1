@@ -8,6 +8,9 @@ import 'my_trips.dart';
 import 'profile_page.dart';
 import 'login_page.dart';
 import 'host_earn_page.dart';
+import 'package:provider/provider.dart';
+import 'models/user_model.dart';
+import 'services/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,8 +63,15 @@ class AuthGate extends StatelessWidget {
           return Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        if (snapshot.hasData) {
-          return MainScreen();
+        if (snapshot.hasData && snapshot.data != null) {
+          final uid = snapshot.data!.uid;
+          // Provide the Firestore-backed UserModel stream to the widget tree
+          return StreamProvider<UserModel?>.value(
+            value: UserService().streamUser(uid),
+            initialData: null,
+            catchError: (_, __) => null,
+            child: MainScreen(),
+          );
         }
 
         return LoginPage();

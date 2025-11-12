@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'models/user_model.dart';
+import 'login_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final userModel = Provider.of<UserModel?>(context);
+    final authUser = FirebaseAuth.instance.currentUser;
     return Scaffold(
       backgroundColor: Color(0xFFF6F8FA),
       appBar: AppBar(
@@ -54,14 +58,16 @@ class ProfilePage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Siddhant Galande",
+                        userModel?.displayName ??
+                            authUser?.displayName ??
+                            'User',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
                       ),
                       Text(
-                        "siddhant2974@gmail.com",
+                        userModel?.email ?? authUser?.email ?? '',
                         style: TextStyle(color: Colors.grey[700]),
                       ),
                       SizedBox(height: 8),
@@ -93,13 +99,13 @@ class ProfilePage extends StatelessWidget {
               _StatCard(
                 icon: Icons.directions_car,
                 label: "Cars Listed",
-                value: "2",
+                value: "—",
               ),
-              _StatCard(icon: Icons.book_online, label: "Bookings", value: "5"),
+              _StatCard(icon: Icons.book_online, label: "Bookings", value: "—"),
               _StatCard(
                 icon: Icons.credit_score,
                 label: "Credits",
-                value: "₹1200",
+                value: userModel != null ? '₹${userModel.walletBalance}' : '—',
               ),
             ],
           ),
@@ -194,9 +200,12 @@ class ProfilePage extends StatelessWidget {
 
                 if (confirm == true) {
                   await FirebaseAuth.instance.signOut();
-                  // Navigate to login page (replace current)
+                  // After sign out, clear navigation and go to login screen
                   if (context.mounted) {
-                    Navigator.of(context).pushReplacementNamed('/login');
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => LoginPage()),
+                      (route) => false,
+                    );
                   }
                 }
               },
