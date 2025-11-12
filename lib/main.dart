@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'my_trips.dart';
 import 'profile_page.dart';
 import 'login_page.dart';
 import 'host_earn_page.dart';
 import 'package:provider/provider.dart';
 import 'models/user_model.dart';
 import 'services/user_service.dart';
+import 'services/car_service.dart';
+import 'models/car_model.dart';
+import 'all_cars_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +67,23 @@ class AuthGate extends StatelessWidget {
 
         if (snapshot.hasData && snapshot.data != null) {
           final uid = snapshot.data!.uid;
+          // Ensure a Firestore user doc exists for this auth user (create if missing).
+          // We schedule this as a microtask so it doesn't block the build.
+          Future.microtask(() async {
+            try {
+              final u = await UserService().fetchUser(uid);
+              if (u == null) {
+                final authUser = snapshot.data!;
+                final newUser = UserModel(
+                  uid: uid,
+                  displayName: authUser.displayName,
+                  email: authUser.email,
+                  location: null,
+                );
+                await UserService().createOrUpdateUser(newUser);
+              }
+            } catch (_) {}
+          });
           // Provide the Firestore-backed UserModel stream to the widget tree
           return StreamProvider<UserModel?>.value(
             value: UserService().streamUser(uid),
@@ -92,7 +111,8 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = [
     HomePage(),
-    MyTripsPage(), // Use your custom My Trips page
+    // All Cars page
+    AllCarsPage(),
     ProfilePage(), // Profile page
     HostEarnPage(), // Host & Earn page
   ];
@@ -103,7 +123,6 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: _pages[_selectedIndex]),
@@ -115,7 +134,7 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.directions_car),
-            label: 'My Trips',
+            label: 'All Cars',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           BottomNavigationBarItem(
@@ -135,45 +154,13 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class Car {
-  final String name;
-  final String location;
-  final int pricePerDay;
-
-  const Car({
-    required this.name,
-    required this.location,
-    required this.pricePerDay,
-  });
-}
-
 class _HomePageState extends State<HomePage> {
-  final List<Car> _allCars = const [
-    Car(name: 'Toyota Innova Crysta', location: 'Nashik', pricePerDay: 2500),
-    Car(name: 'Maruti Swift', location: 'Nashik', pricePerDay: 1200),
-    Car(name: 'Hyundai Creta', location: 'Mumbai', pricePerDay: 2200),
-    Car(name: 'Mahindra Scorpio', location: 'Pune', pricePerDay: 2100),
-  ];
-
-  List<Car> _filteredCars = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _filteredCars = List.from(_allCars);
-  }
+  final CarService _carService = CarService();
+  String _searchQuery = '';
 
   void _filterCars(String query) {
-    final q = query.toLowerCase().trim();
     setState(() {
-      if (q.isEmpty) {
-        _filteredCars = List.from(_allCars);
-      } else {
-        _filteredCars = _allCars.where((c) {
-          return c.name.toLowerCase().contains(q) ||
-              c.location.toLowerCase().contains(q);
-        }).toList();
-      }
+      _searchQuery = query.toLowerCase().trim();
     });
   }
 
@@ -207,7 +194,7 @@ class _HomePageState extends State<HomePage> {
                           style: TextStyle(fontSize: 14),
                         ),
                         Text(
-                          userModel?.email ?? "Nashik",
+                          userModel?.location ?? "Nashik",
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -251,66 +238,83 @@ class _HomePageState extends State<HomePage> {
 
             SizedBox(height: 12),
 
-            // Search results (horizontal list)
-            if (_filteredCars.isNotEmpty)
-              Container(
-                height: 140,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _filteredCars.length,
-                  separatorBuilder: (_, __) => SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final car = _filteredCars[index];
-                    return Container(
-                      width: 260,
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.08),
-                            blurRadius: 6,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.directions_car,
-                            size: 48,
-                            color: Colors.orange,
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  car.name,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                SizedBox(height: 6),
-                                Text(car.location),
-                                SizedBox(height: 6),
-                                Text(
-                                  '₹${car.pricePerDay}/day',
-                                  style: TextStyle(
-                                    color: Colors.green[700],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+            // Search results (horizontal list) - backed by Firestore
+            StreamBuilder<List<CarModel>>(
+              stream: _carService.streamAllCars(),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting)
+                  return Center(child: CircularProgressIndicator());
+                if (snap.hasError) return SizedBox.shrink();
+                final all = snap.data ?? [];
+                final filtered = all.where((c) {
+                  final q = _searchQuery;
+                  if (q.isEmpty) return true;
+                  return c.name.toLowerCase().contains(q) ||
+                      c.location.toLowerCase().contains(q);
+                }).toList();
+                if (filtered.isEmpty) return SizedBox.shrink();
+                return Container(
+                  height: 140,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final car = filtered[index];
+                      return Container(
+                        width: 260,
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.08),
+                              blurRadius: 6,
+                              offset: Offset(0, 4),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.directions_car,
+                              size: 48,
+                              color: Colors.orange,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    car.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(car.location),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    '₹${car.pricePerDay}/day',
+                                    style: TextStyle(
+                                      color: Colors.green[700],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
 
             SizedBox(height: 16),
             // Offer Card

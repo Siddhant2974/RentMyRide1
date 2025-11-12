@@ -1,32 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'models/user_model.dart';
 import 'trip_details.dart';
+import 'services/trip_service.dart';
 
-class MyTripsPage extends StatelessWidget {
+class MyTripsPage extends StatefulWidget {
   const MyTripsPage({super.key});
+
+  @override
+  State<MyTripsPage> createState() => _MyTripsPageState();
+}
+
+class _MyTripsPageState extends State<MyTripsPage> {
+  int _reload = 0;
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserModel?>(context);
+    final TripService tripService = TripService();
 
-    // In future we'll fetch trips from Firestore filtered by user.uid.
-    final trips = [
-      {
-        "car": "Toyota Innova Crysta",
-        "date": "12 Oct 2025",
-        "location": "Nashik",
-        "status": "Upcoming",
-        "image": Icons.directions_car,
-      },
-      {
-        "car": "Hyundai i20",
-        "date": "02 Sep 2025",
-        "location": "Pune",
-        "status": "Completed",
-        "image": Icons.directions_car,
-      },
-    ];
+    // If the Firestore-backed user doc isn't available yet, fall back to
+    // FirebaseAuth currentUser so trips can still be shown (e.g. immediately
+    // after booking when the Firestore doc hasn't been created).
+    final authUser = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid ?? authUser?.uid;
+
+    if (uid == null) {
+      return Scaffold(
+        body: Center(child: Text('Please sign in to see your bookings')),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Color(0xFFF6F8FA),
@@ -44,148 +48,147 @@ class MyTripsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: (user == null)
-          ? Center(child: Text('Loading your profile...'))
-          : (trips.isEmpty)
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.airport_shuttle,
-                    size: 64,
-                    color: Colors.orange[200],
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        // include reload in key so pressing Retry rebuilds the stream subscription
+        stream: tripService.streamTripsByUser(uid),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting)
+            return Center(child: CircularProgressIndicator());
+          if (snap.hasError) {
+            // show the actual error message to help debugging (index or permission links)
+            final err = snap.error;
+            // also log to console
+            debugPrint('MyTrips stream error: $err');
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Error loading trips',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text('$err', textAlign: TextAlign.center),
+                    SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => setState(() => _reload++),
+                      child: Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          final trips = snap.data ?? [];
+          if (trips.isEmpty) return Center(child: Text('No trips yet.'));
+          return ListView.builder(
+            padding: EdgeInsets.all(16),
+            itemCount: trips.length,
+            itemBuilder: (context, index) {
+              final trip = trips[index];
+              return Container(
+                margin: EdgeInsets.only(bottom: 18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    "No trips yet.",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
+                  leading: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.orange[100],
+                    child: Icon(
+                      Icons.directions_car,
+                      color: Colors.orange,
+                      size: 32,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Start your first booking!",
-                    style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+                  title: Text(
+                    trip['carName'] ?? 'Car',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                   ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: EdgeInsets.all(16),
-              itemCount: trips.length,
-              itemBuilder: (context, index) {
-                final trip = trips[index];
-                return Container(
-                  margin: EdgeInsets.only(bottom: 18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.orange.withOpacity(0.08),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: Colors.grey[600],
+                          ),
+                          SizedBox(width: 4),
+                          Text(trip['date'] ?? ''),
+                        ],
+                      ),
+                      SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: Colors.grey[600],
+                          ),
+                          SizedBox(width: 4),
+                          Text(trip['location'] ?? ''),
+                        ],
+                      ),
+                      SizedBox(height: 6),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (trip['status'] ?? '') == 'Upcoming'
+                              ? Colors.green[100]
+                              : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          (trip['status'] ?? ''),
+                          style: TextStyle(
+                            color: (trip['status'] ?? '') == 'Upcoming'
+                                ? Colors.green[800]
+                                : Colors.grey[800],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    leading: CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.orange[100],
-                      child: Icon(
-                        trip["image"] as IconData,
-                        color: Colors.orange,
-                        size: 32,
-                      ),
-                    ),
-                    title: Text(
-                      trip["car"] as String,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              trip["date"] as String,
-                              style: TextStyle(fontSize: 13),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              trip["location"] as String,
-                              style: TextStyle(fontSize: 13),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 6),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: (trip["status"] as String) == "Upcoming"
-                                ? Colors.green[100]
-                                : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            trip["status"] as String,
-                            style: TextStyle(
-                              color: (trip["status"] as String) == "Upcoming"
-                                  ? Colors.green[800]
-                                  : Colors.grey[800],
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 20,
-                      color: Colors.orange,
-                    ),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => TripDetailsPage(trip: trip),
-                        ),
-                      );
-                    },
+                  trailing: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 20,
+                    color: Colors.orange,
                   ),
-                );
-              },
-            ),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => TripDetailsPage(trip: trip),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

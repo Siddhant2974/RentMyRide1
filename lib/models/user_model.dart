@@ -4,6 +4,7 @@ class UserModel {
   final String uid;
   final String? displayName;
   final String? email;
+  final String? location;
   final String? phone;
   final String? photoUrl;
   final bool isHost;
@@ -16,6 +17,7 @@ class UserModel {
     this.email,
     this.phone,
     this.photoUrl,
+    this.location,
     this.isHost = false,
     this.walletBalance = 0,
     this.joinedAt,
@@ -36,6 +38,7 @@ class UserModel {
       uid: uid,
       displayName: map['displayName'] as String?,
       email: map['email'] as String?,
+      location: map['location'] as String?,
       phone: map['phone'] as String?,
       photoUrl: map['photoUrl'] as String?,
       isHost: map['isHost'] == true,
@@ -52,6 +55,7 @@ class UserModel {
     return {
       'displayName': displayName,
       'email': email,
+      'location': location,
       'phone': phone,
       'photoUrl': photoUrl,
       'isHost': isHost,
