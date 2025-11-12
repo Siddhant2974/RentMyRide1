@@ -35,7 +35,6 @@ class _MyTripsPageState extends State<MyTripsPage> {
     return Scaffold(
       backgroundColor: Color(0xFFF6F8FA),
       appBar: AppBar(
-        backgroundColor: Colors.orange,
         elevation: 0,
         title: Text("My Trips", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
@@ -91,11 +90,11 @@ class _MyTripsPageState extends State<MyTripsPage> {
               return Container(
                 margin: EdgeInsets.only(bottom: 18),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.orange.withOpacity(0.08),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 8,
                       offset: Offset(0, 4),
                     ),
@@ -108,10 +107,12 @@ class _MyTripsPageState extends State<MyTripsPage> {
                   ),
                   leading: CircleAvatar(
                     radius: 28,
-                    backgroundColor: Colors.orange[100],
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withOpacity(0.15),
                     child: Icon(
                       Icons.directions_car,
-                      color: Colors.orange,
+                      color: Theme.of(context).colorScheme.secondary,
                       size: 32,
                     ),
                   ),
@@ -154,7 +155,9 @@ class _MyTripsPageState extends State<MyTripsPage> {
                         ),
                         decoration: BoxDecoration(
                           color: (trip['status'] ?? '') == 'Upcoming'
-                              ? Colors.green[100]
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.secondary.withOpacity(0.12)
                               : Colors.grey[300],
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -162,7 +165,7 @@ class _MyTripsPageState extends State<MyTripsPage> {
                           (trip['status'] ?? ''),
                           style: TextStyle(
                             color: (trip['status'] ?? '') == 'Upcoming'
-                                ? Colors.green[800]
+                                ? Theme.of(context).colorScheme.secondary
                                 : Colors.grey[800],
                             fontWeight: FontWeight.bold,
                             fontSize: 12,

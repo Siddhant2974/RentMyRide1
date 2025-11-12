@@ -110,10 +110,7 @@ class _BookingPageState extends State<BookingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Book ${widget.car.name}'),
-        backgroundColor: Colors.orange,
-      ),
+      appBar: AppBar(title: Text('Book ${widget.car.name}')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -141,9 +138,7 @@ class _BookingPageState extends State<BookingPage> {
                           ? 'Start date'
                           : _startDate!.toLocal().toString().split(' ')[0],
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
+                    style: ElevatedButton.styleFrom(),
                   ),
                 ),
                 SizedBox(width: 12),
@@ -155,9 +150,7 @@ class _BookingPageState extends State<BookingPage> {
                           ? 'End date'
                           : _endDate!.toLocal().toString().split(' ')[0],
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
+                    style: ElevatedButton.styleFrom(),
                   ),
                 ),
               ],
@@ -180,7 +173,6 @@ class _BookingPageState extends State<BookingPage> {
               child: ElevatedButton(
                 onPressed: _booking ? null : _book,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
                   padding: EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: _booking

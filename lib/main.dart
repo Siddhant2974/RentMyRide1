@@ -13,6 +13,9 @@ import 'services/user_service.dart';
 import 'services/car_service.dart';
 import 'models/car_model.dart';
 import 'all_cars_page.dart';
+import 'theme.dart';
+import 'widgets/search_bar.dart';
+import 'widgets/header_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,14 +45,24 @@ class RentMyRideApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use authentication gate (show LoginPage when not signed in)
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: AuthGate(),
-      routes: {
-        // Named route so LoginPage can navigate to the main screen without importing main.dart
-        '/main': (context) => MainScreen(),
-      },
+    // Provide a ThemeNotifier for runtime theme switching and use AppTheme
+    return ChangeNotifierProvider<ThemeNotifier>(
+      create: (_) => ThemeNotifier(),
+      child: Consumer<ThemeNotifier>(
+        builder: (context, themeNotifier, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeNotifier.themeMode,
+            home: AuthGate(),
+            routes: {
+              // Named route so LoginPage can navigate to the main screen without importing main.dart
+              '/main': (context) => MainScreen(),
+            },
+          );
+        },
+      ),
     );
   }
 }
@@ -126,22 +139,41 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: _pages[_selectedIndex]),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions_car),
-            label: 'All Cars',
+      bottomNavigationBar: ClipRRect(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color:
+                Theme.of(context).bottomNavigationBarTheme.backgroundColor ??
+                Colors.white,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8),
+            ],
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Host & Earn',
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.directions_car),
+                label: 'All Cars',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.attach_money),
+                label: 'Host & Earn',
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -173,68 +205,11 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: EdgeInsets.all(16),
           children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Hi ${userModel?.displayName != null ? userModel!.displayName!.split(' ').first : 'there'}!",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Finding your drive in ",
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        Text(
-                          userModel?.location ?? "Nashik",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                          ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          size: 18,
-                          color: Colors.orange,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                CircleAvatar(
-                  backgroundColor: Colors.orange,
-                  child: Icon(Icons.monetization_on, color: Colors.white),
-                ),
-              ],
-            ),
+            // Header (refactored)
+            HeaderWidget(userModel: userModel),
             SizedBox(height: 16),
             // Search Bar
-            TextField(
-              decoration: InputDecoration(
-                hintText: "Search car or location",
-                prefixIcon: Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 16,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onChanged: _filterCars,
-            ),
+            AppSearchBar(onChanged: _filterCars),
 
             SizedBox(height: 12),
 

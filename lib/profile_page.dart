@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'theme.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -191,20 +192,27 @@ class _ProfilePageState extends State<ProfilePage> {
     final authUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: Color(0xFFF6F8FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.orange,
         elevation: 0,
-        title: Text(
-          "My Profile",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text("My Profile"),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.settings, color: Colors.white),
-            onPressed: () {},
+            icon: Icon(Icons.brightness_6),
+            onPressed: () {
+              // toggle theme
+              // use provider ThemeNotifier if available
+              try {
+                final notifier = Provider.of<ThemeNotifier>(
+                  context,
+                  listen: false,
+                );
+                notifier.toggle();
+              } catch (_) {}
+            },
           ),
+          IconButton(icon: Icon(Icons.settings), onPressed: () {}),
         ],
       ),
       body: ListView(
@@ -214,11 +222,11 @@ class _ProfilePageState extends State<ProfilePage> {
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.orange.withOpacity(0.08),
+                  color: Colors.black.withOpacity(0.04),
                   blurRadius: 8,
                   offset: Offset(0, 4),
                 ),
@@ -229,26 +237,37 @@ class _ProfilePageState extends State<ProfilePage> {
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    CircleAvatar(
-                      radius: 38,
-                      backgroundColor: Colors.orange,
-                      backgroundImage: (_uploadedPhotoUrl != null)
-                          ? NetworkImage(_uploadedPhotoUrl!) as ImageProvider
-                          : (userModel?.photoUrl != null)
-                          ? NetworkImage(userModel!.photoUrl!)
-                          : null,
-                      child:
-                          (_uploadedPhotoUrl == null &&
-                              (userModel?.photoUrl == null))
-                          ? Icon(Icons.person, size: 48, color: Colors.white)
-                          : null,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.secondary,
+                          width: 2,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 38,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondary,
+                        backgroundImage: (_uploadedPhotoUrl != null)
+                            ? NetworkImage(_uploadedPhotoUrl!) as ImageProvider
+                            : (userModel?.photoUrl != null)
+                            ? NetworkImage(userModel!.photoUrl!)
+                            : null,
+                        child:
+                            (_uploadedPhotoUrl == null &&
+                                (userModel?.photoUrl == null))
+                            ? Icon(Icons.person, size: 48, color: Colors.white)
+                            : null,
+                      ),
                     ),
                     Positioned(
                       right: -6,
                       bottom: -6,
                       child: IconButton(
                         icon: Icon(Icons.camera_alt, color: Colors.white),
-                        color: Colors.orange,
+                        color: Theme.of(context).colorScheme.secondary,
                         onPressed: () => _pickAndUploadPhoto(userModel),
                       ),
                     ),
