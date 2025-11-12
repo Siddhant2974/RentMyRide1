@@ -179,6 +179,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final userModel = Provider.of<UserModel?>(context);
     return Scaffold(
       backgroundColor: Color(0xFFF6F8FA),
       body: SafeArea(
@@ -193,7 +194,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Hi there!",
+                      "Hi ${userModel?.displayName != null ? userModel!.displayName!.split(' ').first : 'there'}!",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -206,7 +207,7 @@ class _HomePageState extends State<HomePage> {
                           style: TextStyle(fontSize: 14),
                         ),
                         Text(
-                          "Nashik",
+                          userModel?.email ?? "Nashik",
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,

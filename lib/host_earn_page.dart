@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'models/user_model.dart';
 
 class HostEarnPage extends StatelessWidget {
   const HostEarnPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserModel?>(context);
     // Mocked hosted cars data
     final hostedCars = [
       {'name': 'Toyota Innova Crysta', 'earnings': '₹12,500'},
@@ -19,7 +22,9 @@ class HostEarnPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Welcome to your Host dashboard',
+              user != null && user.isHost
+                  ? 'Welcome back, ${user.displayName ?? 'Host'}'
+                  : 'Welcome to your Host dashboard',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 12),
@@ -42,7 +47,7 @@ class HostEarnPage extends StatelessWidget {
                         ),
                         SizedBox(height: 6),
                         Text(
-                          '₹18,900',
+                          user != null ? '₹${user.walletBalance}' : '₹18,900',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,

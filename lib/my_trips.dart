@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'models/user_model.dart';
 import 'trip_details.dart';
 
 class MyTripsPage extends StatelessWidget {
@@ -6,6 +8,9 @@ class MyTripsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserModel?>(context);
+
+    // In future we'll fetch trips from Firestore filtered by user.uid.
     final trips = [
       {
         "car": "Toyota Innova Crysta",
@@ -39,7 +44,9 @@ class MyTripsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: trips.isEmpty
+      body: (user == null)
+          ? Center(child: Text('Loading your profile...'))
+          : (trips.isEmpty)
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
