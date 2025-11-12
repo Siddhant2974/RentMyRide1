@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "726085116498",
+    "project_id": "rentmyride-10037",
+    "storage_bucket": "rentmyride-10037.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726085116498:android:b5c75cc0e797ac9138f58b",
+        "android_client_info": {
+          "package_name": "com.example.rentmyride_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmrAXOCNRObifBcmVWeQhvGn3KEtXXZlM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
