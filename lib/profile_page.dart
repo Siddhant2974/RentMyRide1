@@ -82,21 +82,20 @@ class _ProfilePageState extends State<ProfilePage> {
       joinedAt: userModel?.joinedAt,
     );
 
+    final scaffold = ScaffoldMessenger.of(context);
     try {
       await UserService().createOrUpdateUser(updated);
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Profile updated')));
+      if (mounted) {
+        scaffold.showSnackBar(SnackBar(content: Text('Profile updated')));
       }
       setState(() {
         _editing = false;
       });
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
+      if (mounted) {
+        scaffold.showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e')),
+        );
       }
     } finally {
       if (mounted) {
@@ -109,6 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _pickAndUploadPhoto(UserModel? userModel) async {
     final picker = ImagePicker();
+    final scaffold = ScaffoldMessenger.of(context);
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
@@ -172,17 +172,18 @@ class _ProfilePageState extends State<ProfilePage> {
       } catch (_) {}
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Profile photo updated')));
+        scaffold.showSnackBar(SnackBar(content: Text('Profile photo updated')));
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Photo upload failed: $e')));
+      if (mounted) {
+        scaffold.showSnackBar(
+          SnackBar(content: Text('Photo upload failed: $e')),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -226,7 +227,7 @@ class _ProfilePageState extends State<ProfilePage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Color.fromRGBO(0, 0, 0, 0.04),
                   blurRadius: 8,
                   offset: Offset(0, 4),
                 ),
@@ -344,10 +345,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   subtitle: Text("View your rental history"),
                   trailing: Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    if (context.mounted)
+                    if (context.mounted) {
                       Navigator.of(
                         context,
                       ).push(MaterialPageRoute(builder: (_) => MyTripsPage()));
+                    }
                   },
                 ),
                 Divider(height: 1),
@@ -370,7 +372,7 @@ class _ProfilePageState extends State<ProfilePage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.08),
+                  color: Color.fromRGBO(128, 128, 128, 0.08),
                   blurRadius: 8,
                   offset: Offset(0, 4),
                 ),
@@ -509,6 +511,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               ElevatedButton(
                 onPressed: _saving ? null : () => _save(userModel),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                 child: _saving
                     ? SizedBox(
                         height: 16,
@@ -519,7 +522,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       )
                     : Text('Save'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
               ),
               SizedBox(width: 12),
               TextButton(
@@ -559,7 +561,7 @@ class _StatCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.orange.withOpacity(0.08),
+              color: Color.fromRGBO(255, 152, 0, 0.08),
               blurRadius: 8,
               offset: Offset(0, 4),
             ),

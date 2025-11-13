@@ -28,6 +28,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
     setState(() => _loading = true);
+    final scaffold = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     try {
       if (_isRegister) {
         final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -43,11 +45,11 @@ class _LoginPageState extends State<LoginPage> {
       }
       // On success navigate to app root (AuthGate will show MainScreen)
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/');
+      navigator.pushReplacementNamed('/');
     } on FirebaseAuthException catch (e) {
-      _showSnack(e.message ?? e.code);
+      scaffold.showSnackBar(SnackBar(content: Text(e.message ?? e.code)));
     } catch (e) {
-      _showSnack('Error: $e');
+      scaffold.showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -55,25 +57,23 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _signInAnonymously(BuildContext context) async {
     setState(() => _loading = true);
+    final navigator = Navigator.of(context);
+    final scaffold = ScaffoldMessenger.of(context);
     try {
       await FirebaseAuth.instance.signInAnonymously();
       // Navigate to main screen via named route so we avoid circular imports
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/main');
+      navigator.pushReplacementNamed('/main');
     } on FirebaseAuthException catch (e) {
       final msg = e.code == 'operation-not-allowed'
           ? 'Anonymous sign-in is disabled in Firebase. Enable it in Console → Authentication → Sign-in method → Anonymous.'
           : (e.message ?? 'Sign in failed: ${e.code}');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        scaffold.showSnackBar(SnackBar(content: Text(msg)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Sign in failed: $e')));
+        scaffold.showSnackBar(SnackBar(content: Text('Sign in failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);

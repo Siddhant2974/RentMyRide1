@@ -64,6 +64,8 @@ class _BookingPageState extends State<BookingPage> {
     }
 
     setState(() => _booking = true);
+    final scaffold = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     try {
       final startTs = Timestamp.fromDate(_startDate!);
       final endTs = Timestamp.fromDate(_endDate!);
@@ -81,20 +83,15 @@ class _BookingPageState extends State<BookingPage> {
         'createdAt': FieldValue.serverTimestamp(),
       };
       await _tripService.createTrip(data);
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Booking created')));
+      if (mounted) {
+        scaffold.showSnackBar(SnackBar(content: Text('Booking created')));
         // Navigate user to My Trips so they can immediately see their booking
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => MyTripsPage()));
+        navigator.push(MaterialPageRoute(builder: (_) => MyTripsPage()));
       }
     } catch (e) {
-      if (context.mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Booking failed: $e')));
+      if (mounted) {
+        scaffold.showSnackBar(SnackBar(content: Text('Booking failed: $e')));
+      }
     } finally {
       if (mounted) setState(() => _booking = false);
     }
@@ -133,24 +130,24 @@ class _BookingPageState extends State<BookingPage> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _pickStart,
+                    style: ElevatedButton.styleFrom(),
                     child: Text(
                       _startDate == null
                           ? 'Start date'
                           : _startDate!.toLocal().toString().split(' ')[0],
                     ),
-                    style: ElevatedButton.styleFrom(),
                   ),
                 ),
                 SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _pickEnd,
+                    style: ElevatedButton.styleFrom(),
                     child: Text(
                       _endDate == null
                           ? 'End date'
                           : _endDate!.toLocal().toString().split(' ')[0],
                     ),
-                    style: ElevatedButton.styleFrom(),
                   ),
                 ),
               ],

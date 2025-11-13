@@ -15,6 +15,11 @@ class AppColors {
 class AppTheme {
   AppTheme._();
 
+  // Centralized animation durations used across the UI revamp.
+  static const Duration shortAnimation = Duration(milliseconds: 250);
+  static const Duration mediumAnimation = Duration(milliseconds: 350);
+  static const Duration longAnimation = Duration(milliseconds: 450);
+
   static final ThemeData lightTheme = ThemeData(
     primaryColor: AppColors.primary,
     colorScheme: ColorScheme.fromSeed(
@@ -115,10 +120,11 @@ class ThemeNotifier extends ChangeNotifier {
   }
 
   void toggle() {
-    if (_mode == ThemeMode.light)
+    if (_mode == ThemeMode.light) {
       _mode = ThemeMode.dark;
-    else
+    } else {
       _mode = ThemeMode.light;
+    }
     notifyListeners();
   }
 }

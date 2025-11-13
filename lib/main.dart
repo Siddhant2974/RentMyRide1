@@ -69,6 +69,8 @@ class RentMyRideApp extends StatelessWidget {
 
 /// Shows [LoginPage] when user is not signed in, else shows [MainScreen].
 class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -136,6 +138,7 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: _pages[_selectedIndex]),
@@ -150,7 +153,7 @@ class _MainScreenState extends State<MainScreen> {
                 Theme.of(context).bottomNavigationBarTheme.backgroundColor ??
                 Colors.white,
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8),
+              BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.04), blurRadius: 8),
             ],
           ),
           child: BottomNavigationBar(
@@ -198,338 +201,334 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Restored fuller Home UI (kept moderately simple and safe) while we continue the revamp.
     final userModel = Provider.of<UserModel?>(context);
     return Scaffold(
-      backgroundColor: Color(0xFFF6F8FA),
       body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.all(16),
-          children: [
-            // Header (refactored)
-            HeaderWidget(userModel: userModel),
-            SizedBox(height: 16),
-            // Search Bar
-            AppSearchBar(onChanged: _filterCars),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).scaffoldBackgroundColor,
+                Theme.of(
+                  context,
+                ).scaffoldBackgroundColor.withAlpha((0.98 * 255).round()),
+              ],
+            ),
+          ),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Header
+              HeaderWidget(userModel: userModel),
+              const SizedBox(height: 16),
 
-            SizedBox(height: 12),
+              // Search
+              AppSearchBar(onChanged: _filterCars),
+              const SizedBox(height: 12),
 
-            // Search results (horizontal list) - backed by Firestore
-            StreamBuilder<List<CarModel>>(
-              stream: _carService.streamAllCars(),
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting)
-                  return Center(child: CircularProgressIndicator());
-                if (snap.hasError) return SizedBox.shrink();
-                final all = snap.data ?? [];
-                final filtered = all.where((c) {
-                  final q = _searchQuery;
-                  if (q.isEmpty) return true;
-                  return c.name.toLowerCase().contains(q) ||
-                      c.location.toLowerCase().contains(q);
-                }).toList();
-                if (filtered.isEmpty) return SizedBox.shrink();
-                return Container(
-                  height: 140,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final car = filtered[index];
-                      return Container(
-                        width: 260,
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.08),
-                              blurRadius: 6,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.directions_car,
-                              size: 48,
-                              color: Colors.orange,
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    car.name,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+              // Horizontal search results
+              StreamBuilder<List<CarModel>>(
+                stream: _carService.streamAllCars(),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 140,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (snap.hasError) return const SizedBox.shrink();
+                  final all = snap.data ?? [];
+                  final filtered = all.where((c) {
+                    final q = _searchQuery;
+                    if (q.isEmpty) return true;
+                    return c.name.toLowerCase().contains(q) ||
+                        c.location.toLowerCase().contains(q);
+                  }).toList();
+                  if (filtered.isEmpty) return const SizedBox.shrink();
+                  return SizedBox(
+                    height: 140,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        final car = filtered[index];
+                        return Container(
+                          width: 260,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color.fromRGBO(0, 0, 0, 0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.directions_car,
+                                size: 48,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      car.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(height: 6),
-                                  Text(car.location),
-                                  SizedBox(height: 6),
-                                  Text(
-                                    '₹${car.pricePerDay}/day',
-                                    style: TextStyle(
-                                      color: Colors.green[700],
-                                      fontWeight: FontWeight.bold,
+                                    const SizedBox(height: 6),
+                                    Text(car.location),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '₹${car.pricePerDay}/day',
+                                      style: TextStyle(
+                                        color: Colors.green[700],
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Featured card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF9C4),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color.fromRGBO(255, 152, 0, 0.10),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.directions_car, size: 48, color: Colors.orange),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Featured Car',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            'Toyota Innova Crysta - Spacious, comfortable, and perfect for family trips!',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                      color: Colors.orange,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Drive type cards
+              Row(
+                children: const [
+                  Expanded(
+                    child: DriveCard(
+                      title: 'DAILY DRIVES',
+                      subtitle: 'Drive Unlimited, 4 hrs or more',
+                      days: 'Upto 7 Days',
+                      icon: Icons.timer,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: DriveCard(
+                      title: 'SUBSCRIPTION',
+                      subtitle: 'Longer Duration, Higher Discount',
+                      days: '7+ Days',
+                      icon: Icons.calendar_today,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Host & Earn preview
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.green, width: 1.5),
+                  borderRadius: BorderRadius.circular(16),
+                  color: Theme.of(context).cardColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color.fromRGBO(0, 128, 0, 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'HOST & EARN',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Turn your idle car into a steady income stream',
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.payment),
+                            label: const Text('Dashboard access'),
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-
-            SizedBox(height: 16),
-            // Offer Card
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green[600],
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.15),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Earn guaranteed credits up to Rs.1500 after completing your first booking!",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.pinkAccent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      "SPECIAL OFFER",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            // Featured Car Section
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Color(0xFFFFF9C4),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.orange.withOpacity(0.10),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.directions_car, size: 48, color: Colors.orange),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Featured Car",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17,
                           ),
-                        ),
-                        Text(
-                          "Toyota Innova Crysta - Spacious, comfortable, and perfect for family trips!",
-                          style: TextStyle(fontSize: 14),
                         ),
                       ],
                     ),
-                  ),
-                  Icon(Icons.arrow_forward_ios, size: 18, color: Colors.orange),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            // Top Rated Hosts
-            Container(
-              alignment: Alignment.center,
-              child: Text(
-                "✨ Top Rated Verified hosts ✨",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-            SizedBox(height: 16),
-            // Self Drive Section
-            Row(
-              children: [
-                Expanded(
-                  child: DriveCard(
-                    title: "DAILY DRIVES",
-                    subtitle: "Drive Unlimited, 4 hrs or more",
-                    days: "Upto 7 Days",
-                    icon: Icons.timer,
-                  ),
+                  ],
                 ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: DriveCard(
-                    title: "SUBSCRIPTION",
-                    subtitle: "Longer Duration, Higher Discount",
-                    days: "7+ Days",
-                    icon: Icons.calendar_today,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            // Host & Earn
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.green, width: 1.5),
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "HOST & EARN",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  SizedBox(height: 6),
-                  Text("Turn your idle car into a steady income stream"),
-                  SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: Icon(Icons.payment),
-                          label: Text("Dashboard access"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+
+              const SizedBox(height: 20),
+
+              // Rewards
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color.fromRGBO(0, 0, 0, 0.02),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.card_giftcard,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Rewards worth up to ₹2000 await!',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
-                        ),
+                          SizedBox(height: 6),
+                          Text('Your surprise is locked for now.'),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            // Rewards Section
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.card_giftcard, size: 48, color: Colors.green),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Rewards worth up to ₹2000 await!",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        Text("Your surprise is locked for now."),
-                      ],
                     ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Why RentMyRide
+              const Text(
+                'WHY RENTMYRIDE ?',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: const [
+                  FeatureCard(
+                    icon: Icons.verified,
+                    text: '100% Hassle free Secured Trip',
                   ),
-                  Icon(Icons.arrow_forward_ios, size: 18, color: Colors.green),
+                  SizedBox(width: 16),
+                  FeatureCard(icon: Icons.public, text: 'Anywhere Anytime'),
                 ],
               ),
-            ),
-            SizedBox(height: 20),
-            // Why RentMyRide Section
-            Text(
-              "WHY RENTMYRIDE ?",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                FeatureCard(
-                  icon: Icons.verified,
-                  text: "100% Hassle free Secured Trip",
-                ),
-                SizedBox(width: 16),
-                FeatureCard(icon: Icons.public, text: "Anywhere Anytime"),
-              ],
-            ),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                FeatureCard(
-                  icon: Icons.access_time,
-                  text: "Endless Pay by hour drive limitless",
-                ),
-                SizedBox(width: 16),
-                FeatureCard(icon: Icons.star, text: "Quality Cars in the city"),
-              ],
-            ),
-            SizedBox(height: 24),
-          ],
+              const SizedBox(height: 16),
+              Row(
+                children: const [
+                  FeatureCard(
+                    icon: Icons.access_time,
+                    text: 'Endless Pay by hour drive limitless',
+                  ),
+                  SizedBox(width: 16),
+                  FeatureCard(
+                    icon: Icons.star,
+                    text: 'Quality Cars in the city',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class DriveCard extends StatelessWidget {
+// Lightweight, safe replacements for previously refactored cards.
+// DriveCard (interactive) implemented below.
+class DriveCard extends StatefulWidget {
   final String title;
   final String subtitle;
   final String days;
@@ -544,30 +543,72 @@ class DriveCard extends StatelessWidget {
   });
 
   @override
+  State<DriveCard> createState() => _DriveCardState();
+}
+
+class _DriveCardState extends State<DriveCard> {
+  bool _pressed = false;
+
+  void _onTapDown(_) => setState(() => _pressed = true);
+  void _onTapUp(_) => setState(() => _pressed = false);
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 50, color: Colors.orange),
-          SizedBox(height: 8),
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 4),
-          Text(subtitle, textAlign: TextAlign.center),
-          SizedBox(height: 6),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.purple[100],
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(days, style: TextStyle(color: Colors.purple[800])),
+    final bg = Theme.of(context).cardColor;
+    final primary = Theme.of(context).colorScheme.primary;
+    return Semantics(
+      label: '${widget.title} card',
+      button: true,
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: () {},
+        child: AnimatedContainer(
+          duration: AppTheme.shortAnimation,
+          padding: const EdgeInsets.all(12),
+          transform: (() {
+            final s = _pressed ? 0.98 : 1.0;
+            return Matrix4.diagonal3Values(s, s, 1.0);
+          })(),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Color.fromRGBO(0, 0, 0, _pressed ? 0.08 : 0.04),
+                blurRadius: _pressed ? 12 : 6,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.icon,
+                size: 40,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.title,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(widget.subtitle, textAlign: TextAlign.center),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: primary.withAlpha((0.12 * 255).round()),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(widget.days, style: TextStyle(color: primary)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -583,13 +624,17 @@ class FeatureCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 40, color: Colors.orange),
-          SizedBox(height: 6),
+          Icon(icon, size: 36, color: Theme.of(context).colorScheme.secondary),
+          const SizedBox(height: 6),
           Text(
             text,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12),
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
         ],
       ),

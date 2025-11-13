@@ -51,8 +51,9 @@ class _MyTripsPageState extends State<MyTripsPage> {
         // include reload in key so pressing Retry rebuilds the stream subscription
         stream: tripService.streamTripsByUser(uid),
         builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting)
+          if (snap.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
+          }
           if (snap.hasError) {
             // show the actual error message to help debugging (index or permission links)
             final err = snap.error;
@@ -81,7 +82,9 @@ class _MyTripsPageState extends State<MyTripsPage> {
             );
           }
           final trips = snap.data ?? [];
-          if (trips.isEmpty) return Center(child: Text('No trips yet.'));
+          if (trips.isEmpty) {
+            return Center(child: Text('No trips yet.'));
+          }
           return ListView.builder(
             padding: EdgeInsets.all(16),
             itemCount: trips.length,
@@ -94,7 +97,7 @@ class _MyTripsPageState extends State<MyTripsPage> {
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Color.fromRGBO(0, 0, 0, 0.04),
                       blurRadius: 8,
                       offset: Offset(0, 4),
                     ),
@@ -109,7 +112,7 @@ class _MyTripsPageState extends State<MyTripsPage> {
                     radius: 28,
                     backgroundColor: Theme.of(
                       context,
-                    ).colorScheme.secondary.withOpacity(0.15),
+                    ).colorScheme.secondary.withAlpha((0.15 * 255).round()),
                     child: Icon(
                       Icons.directions_car,
                       color: Theme.of(context).colorScheme.secondary,
@@ -155,9 +158,8 @@ class _MyTripsPageState extends State<MyTripsPage> {
                         ),
                         decoration: BoxDecoration(
                           color: (trip['status'] ?? '') == 'Upcoming'
-                              ? Theme.of(
-                                  context,
-                                ).colorScheme.secondary.withOpacity(0.12)
+                              ? Theme.of(context).colorScheme.secondary
+                                    .withAlpha((0.12 * 255).round())
                               : Colors.grey[300],
                           borderRadius: BorderRadius.circular(12),
                         ),

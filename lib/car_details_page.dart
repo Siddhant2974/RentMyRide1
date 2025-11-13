@@ -33,13 +33,16 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   Future<void> _loadHost() async {
     try {
       final host = await UserService().fetchUser(widget.car.hostId);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _host = host;
           _loadingHost = false;
         });
+      }
     } catch (_) {
-      if (mounted) setState(() => _loadingHost = false);
+      if (mounted) {
+        setState(() => _loadingHost = false);
+      }
     }
   }
 
@@ -48,7 +51,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (user == null) return;
     try {
       final fav = await CarService().isFavorite(user.uid, widget.car.id);
-      if (mounted) setState(() => _isFavorite = fav);
+      if (mounted) {
+        setState(() => _isFavorite = fav);
+      }
     } catch (_) {}
   }
 
@@ -107,7 +112,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     left: 12,
                     top: 12,
                     child: CircleAvatar(
-                      backgroundColor: Colors.black.withOpacity(0.4),
+                      backgroundColor: Color.fromRGBO(0, 0, 0, 0.4),
                       child: IconButton(
                         icon: Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () => Navigator.of(context).pop(),
@@ -118,7 +123,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     right: 12,
                     top: 12,
                     child: CircleAvatar(
-                      backgroundColor: Colors.black.withOpacity(0.4),
+                      backgroundColor: Color.fromRGBO(0, 0, 0, 0.4),
                       child: IconButton(
                         icon: Icon(
                           _isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -127,12 +132,13 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                         onPressed: () async {
                           final user = widget.currentUser;
                           if (user == null) {
-                            if (context.mounted)
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Sign in to save favorites'),
                                 ),
                               );
+                            }
                             return;
                           }
                           setState(() => _isFavorite = !_isFavorite);
@@ -149,14 +155,16 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               );
                             }
                           } catch (e) {
-                            if (mounted)
+                            if (mounted) {
                               setState(() => _isFavorite = !_isFavorite);
-                            if (context.mounted)
+                            }
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Failed to update favorite'),
                                 ),
                               );
+                            }
                           }
                         },
                       ),
@@ -234,7 +242,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              if (context.mounted)
+                              if (context.mounted) {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => HostEarnPage(
@@ -242,6 +250,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     ),
                                   ),
                                 );
+                              }
                             },
                             child: CircleAvatar(
                               radius: 20,

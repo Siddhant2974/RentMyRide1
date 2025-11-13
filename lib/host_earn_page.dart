@@ -78,10 +78,11 @@ class _HostEarnPageState extends State<HostEarnPage> {
         _adding = false;
       });
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Create failed: $e')));
+      }
       setState(() => _adding = false);
     }
   }
@@ -93,7 +94,7 @@ class _HostEarnPageState extends State<HostEarnPage> {
     final hostId = widget.hostIdParam ?? (user?.uid ?? '');
 
     return Scaffold(
-      appBar: AppBar(title: Text('Host & Earn'), backgroundColor: Colors.green),
+      appBar: AppBar(title: Text('Host & Earn')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -103,11 +104,11 @@ class _HostEarnPageState extends State<HostEarnPage> {
               user != null && user.isHost
                   ? 'Welcome back, ${user.displayName ?? 'Host'}'
                   : 'Welcome to your Host dashboard',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             SizedBox(height: 12),
             Card(
-              elevation: 2,
+              elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -121,33 +122,36 @@ class _HostEarnPageState extends State<HostEarnPage> {
                       children: [
                         Text(
                           'Total earnings',
-                          style: TextStyle(color: Colors.grey[700]),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         SizedBox(height: 6),
                         Text(
                           user != null ? '₹${user.walletBalance}' : '—',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ],
                     ),
-                    ElevatedButton.icon(
-                      onPressed: () => showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (_) => Padding(
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).viewInsets.bottom,
+                    Semantics(
+                      button: true,
+                      label: 'List a car',
+                      child: ElevatedButton.icon(
+                        onPressed: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: _buildAddForm(hostId),
                           ),
-                          child: _buildAddForm(hostId),
                         ),
-                      ),
-                      icon: Icon(Icons.add),
-                      label: Text('List a car'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        icon: Icon(Icons.add),
+                        label: Text('List a car'),
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -170,15 +174,18 @@ class _HostEarnPageState extends State<HostEarnPage> {
                 child: StreamBuilder<List<CarModel>>(
                   stream: _carService.streamCarsByHost(hostId),
                   builder: (context, snap) {
-                    if (snap.connectionState == ConnectionState.waiting)
+                    if (snap.connectionState == ConnectionState.waiting) {
                       return Center(child: CircularProgressIndicator());
-                    if (snap.hasError)
+                    }
+                    if (snap.hasError) {
                       return Center(
                         child: Text('Error loading listings: ${snap.error}'),
                       );
+                    }
                     final cars = snap.data ?? [];
-                    if (cars.isEmpty)
+                    if (cars.isEmpty) {
                       return Center(child: Text('No listings yet'));
+                    }
                     return ListView.separated(
                       itemCount: cars.length,
                       separatorBuilder: (_, __) => Divider(),
